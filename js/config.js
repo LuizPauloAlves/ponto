@@ -47,12 +47,12 @@ export const CAPTURA = Object.freeze({
   scoreMin: 0.6,
   larguraMinPx: 110,
   larguraMinFracao: 0.2,
-  yawVirar: 0.3,             // quanto virar o rosto no desafio de vivacidade
+  yawVirar: 0.25,            // ângulo (~14°) que a câmera precisa mudar no desafio de vivacidade
   yawFrente: 0.13,
   pitchFrente: 0.3,
   framesFrente: 3,
-  yawLadoMin: 0.15,
-  yawLadoMax: 0.55,
+  yawLadoMin: 0.12,          // ~7°: "levemente" já basta
+  yawLadoMax: 0.55,          // ~31°: passou disso, o app pede para voltar um pouco
   framesPorPasso: 3,
   pausaEntrePassos: 5,
   toleranciaDistante: 70,
@@ -64,17 +64,23 @@ export const CAPTURA = Object.freeze({
 /** Aprendizado de visual novo: só com reconhecimento forte, no máximo 1 por dia e 5 por pessoa. */
 export const APRENDIZADO = Object.freeze({ folga: 0.08, teto: 0.88, intervaloMs: 20 * 3600 * 1000, maxModelos: 5 });
 
-export const PASSOS_CADASTRO = Object.freeze([
-  { id: 'frente', instrucao: 'Olhe de frente para a câmera' },
-  { id: 'lado_a', instrucao: 'Vire o rosto um pouco para um lado' },
-  { id: 'lado_b', instrucao: 'Agora um pouco para o outro lado' },
-  { id: 'sorriso', instrucao: 'Olhe de frente e sorria' },
-  { id: 'distante', instrucao: 'Afaste um pouco o celular, olhando de frente' },
-]);
-export const PASSOS_VISUAL_NOVO = Object.freeze([
-  { id: 'frente', instrucao: 'Olhe de frente para a câmera' },
-  { id: 'sorriso', instrucao: 'Olhe de frente e sorria' },
-]);
+/**
+ * Passos do cadastro. Quem segura o celular move a CÂMERA e o rosto fica parado: assim a pessoa
+ * continua olhando para a tela e consegue ler a próxima instrução (virar o rosto inteiro escondia o texto).
+ * Os lados aceitam qualquer ordem; "esquerda" e "direita" só orientam quem está segurando.
+ */
+const PASSO = Object.freeze({
+  frente: Object.freeze({ id: 'frente', instrucao: 'Rosto de frente para a câmera' }),
+  esquerda: Object.freeze({ id: 'lado_a', instrucao: 'Mova a câmera levemente para a esquerda, com o rosto parado' }),
+  direita: Object.freeze({ id: 'lado_b', instrucao: 'Agora mova a câmera levemente para a direita (o outro lado)' }),
+  sorriso: Object.freeze({ id: 'sorriso', instrucao: 'De frente para a câmera, com um sorriso' }),
+  distante: Object.freeze({ id: 'distante', instrucao: 'Afaste um pouco a câmera, ainda de frente para o rosto' }),
+});
+export const PASSOS_CADASTRO = Object.freeze([PASSO.frente, PASSO.esquerda, PASSO.direita, PASSO.sorriso, PASSO.distante]);
+export const PASSOS_VISUAL_NOVO = Object.freeze([PASSO.frente, PASSO.sorriso]);
+
+/** Câmera usada no cadastro: a própria pessoa (frontal) ou alguém enquadrando o rosto dela (traseira). */
+export const CAMERAS = Object.freeze({ frontal: 'frontal', traseira: 'traseira' });
 
 export const PIN_TENTATIVAS = Object.freeze({ max: 5, bloqueioMs: 5 * 60000 });
 export const HISTORICO_LOCAL_DIAS = 45;

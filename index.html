@@ -17,6 +17,15 @@
 <body>
   <main id="app">
 
+    <!-- Convite para pôr o app na tela inicial (ui/instalacao.js decide o texto) -->
+    <aside id="instalar" class="instalar" aria-label="Instalar o app" hidden>
+      <p id="instalar-texto"></p>
+      <div class="instalar-acoes">
+        <button id="instalar-botao" class="btn btn-principal" type="button" hidden>Instalar</button>
+        <button id="instalar-fechar" class="btn btn-secundario" type="button">Agora não</button>
+      </div>
+    </aside>
+
     <!-- Primeiro uso: conectar ao Apps Script -->
     <section id="tela-config" class="tela" hidden>
       <h1 class="titulo-tela">Conectar à planilha</h1>
@@ -90,6 +99,13 @@
       </div>
 
       <div id="aba-pessoas" class="aba" role="tabpanel" hidden>
+        <fieldset class="grupo">
+          <legend>Câmera para cadastrar</legend>
+          <div class="opcoes opcoes-2">
+            <label><input type="radio" name="pes-camera" value="frontal" checked>Frontal<small>a pessoa segura o celular</small></label>
+            <label><input type="radio" name="pes-camera" value="traseira">Traseira<small>você enquadra o rosto dela</small></label>
+          </div>
+        </fieldset>
         <button id="pes-nova" class="btn btn-principal">Cadastrar pessoa</button>
         <form id="pes-form" class="form-bloco" hidden>
           <label class="campo">
@@ -100,7 +116,7 @@
             <span>PIN de reserva (4 a 6 números, opcional)</span>
             <input id="pes-pin" inputmode="numeric" pattern="[0-9]{4,6}" maxlength="6" autocomplete="off">
           </label>
-          <p class="texto-apoio">Ao continuar, a câmera vai pedir 5 posições do rosto. Só os números gerados pela IA são guardados, nunca a foto.</p>
+          <p class="texto-apoio">Ao continuar, o rosto fica parado e a câmera se move devagar: de frente, levemente à esquerda, à direita, com sorriso e um pouco mais longe. Só os números gerados pela IA são guardados, nunca a foto.</p>
           <label class="check">
             <input id="pes-consentimento" type="checkbox" required>
             <span>A pessoa autorizou o uso da biometria facial para registro de ponto (LGPD).</span>
@@ -146,9 +162,9 @@
             <span>Horas por dia (horas:minutos)</span>
             <input id="aj-jornada" type="text" inputmode="numeric" pattern="\d{1,2}:[0-5]\d" placeholder="8:00" maxlength="5" required>
           </label>
-          <fieldset class="dias">
+          <fieldset class="grupo">
             <legend>Dias de trabalho</legend>
-            <div id="aj-dias" class="dias-grade"></div>
+            <div id="aj-dias" class="opcoes opcoes-7"></div>
           </fieldset>
 
           <h2 class="titulo-bloco">Reconhecimento</h2>

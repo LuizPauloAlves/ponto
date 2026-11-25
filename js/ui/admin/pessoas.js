@@ -1,12 +1,14 @@
 // pessoas.js — aba Pessoas: cadastro facial, "visual novo" e desativar/reativar.
-import { PASSOS_CADASTRO, PASSOS_VISUAL_NOVO } from '../../config.js';
+import { CAMERAS, PASSOS_CADASTRO, PASSOS_VISUAL_NOVO } from '../../config.js';
 import { codificarModelo } from '../../dominio/codificacao.js';
-import { $, el, primeiroNome } from '../dom.js';
+import { $, $$, el, primeiroNome } from '../dom.js';
 import { perguntaDoAlerta } from '../textos.js';
 
 const PIN_VALIDO = /^\d{4,6}$/;
+const PREFERENCIA_CAMERA = 'cameraCadastro';
 
-export function criarAbaPessoas({ catalogo, chamarAdmin, recarregar, telaCamera, reconhecimento, aviso }) {
+export function criarAbaPessoas({ catalogo, chamarAdmin, recarregar, telaCamera, reconhecimento, aviso, banco }) {
+  const opcoesCamera = $$('input[name=pes-camera]');
   const lista = $('#pes-lista');
   const formulario = $('#pes-form');
   const botaoNova = $('#pes-nova');
@@ -19,6 +21,15 @@ export function criarAbaPessoas({ catalogo, chamarAdmin, recarregar, telaCamera,
     if (aberto) campoNome.focus();
   }
 
+  const cameraEscolhida = () => opcoesCamera.find((o) => o.checked)?.value || CAMERAS.frontal;
+
+  /** Volta a câmera usada da última vez: quem ajuda nos cadastros costuma repetir a escolha. */
+  async function lembrarCamera() {
+    const salva = await banco.preferencias.ler(PREFERENCIA_CAMERA).catch(() => null);
+    const opcao = opcoesCamera.find((o) => o.value === salva);
+    if (opcao) opcao.checked = true;
+  }
+
   async function salvar({ funcionarioId, nome, pin, templates }) {
     aviso.mostrar('Salvando cadastro…', 10000);
     const modelos = templates.map(codificarModelo);
@@ -29,7 +40,8 @@ export function criarAbaPessoas({ catalogo, chamarAdmin, recarregar, telaCamera,
 
   /** Captura o rosto, confere os alertas com a pessoa e salva. Devolve true se salvou. */
   async function cadastrar({ funcionarioId = null, nome, pin = '', passos }) {
-    const captura = await telaCamera.capturarCadastro({ passos, ajustes: catalogo.ajustes() });
+    const frontal = cameraEscolhida() === CAMERAS.frontal;
+    const captura = await telaCamera.capturarCadastro({ passos, ajustes: catalogo.ajustes(), frontal });
     if (!captura) return false;
     const templates = captura.valor;
     const alertas = reconhecimento.conferirNovoCadastro(templates, funcionarioId);
@@ -80,6 +92,8 @@ export function criarAbaPessoas({ catalogo, chamarAdmin, recarregar, telaCamera,
     lista.replaceChildren(...pessoas.map(itemDaLista));
   }
 
+  opcoesCamera.forEach((o) => o.addEventListener('change', () => banco.preferencias.gravar(PREFERENCIA_CAMERA, cameraEscolhida()).catch(() => {})));
+  lembrarCamera();
   botaoNova.addEventListener('click', () => abrirFormulario(true));
   $('#pes-cancelar').addEventListener('click', () => abrirFormulario(false));
   formulario.addEventListener('submit', async (e) => {

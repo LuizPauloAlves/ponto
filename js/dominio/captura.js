@@ -1,14 +1,18 @@
 // captura.js — regras da leitura do rosto, quadro a quadro: qualidade, desafio de vivacidade
-// (virar o rosto) e o roteiro guiado do cadastro. São máquinas de estado puras: recebem um rosto
+// (mover a câmera em volta do rosto parado) e o roteiro guiado do cadastro. São máquinas de estado puras: recebem um rosto
 // por chamada e devolvem o estado; quem lê a câmera fica em servicos/leitorFacial.js.
 import { AJUSTES_PADRAO, CAPTURA, PASSOS_CADASTRO } from '../config.js';
 import { mediaVetores } from './biometria.js';
 
 const INSTRUCOES = Object.freeze({
   sem_rosto: 'Posicione o rosto dentro do oval',
-  longe: 'Aproxime o rosto da câmera',
+  longe: 'Aproxime a câmera do rosto',
+  demais: 'Passou do ponto: volte a câmera um pouco',
+  mesmo_lado: 'Esse lado já foi: agora para o outro lado',
   baixa_qualidade: 'Procure um lugar com mais luz no rosto',
 });
+
+const PASSOS_DE_LADO = new Set(['lado_a', 'lado_b']);
 
 const media = (valores) => (valores.length ? valores.reduce((s, v) => s + v, 0) / valores.length : null);
 
@@ -36,7 +40,7 @@ export function vivacidadeAprovada(real, live, { minReal, minLive }) {
 }
 
 /**
- * Desafio de vivacidade: virar o rosto para qualquer lado e voltar de frente. Uma foto parada
+ * Desafio de vivacidade: mudar o ângulo câmera/rosto para um lado e voltar de frente. Uma foto parada
  * não consegue. Somado aos modelos antispoof e liveness da Human, dificulta bastante fraudes.
  * Fases: procurando → virar → frente → pronto | falhou.
  */
@@ -48,7 +52,12 @@ export function criarDesafio(opcoes = {}) {
   const vetores = [];
 
   const PROGRESSO = { procurando: () => 0.08, virar: () => 0.33, frente: () => 0.6 + (0.35 * vetores.length) / o.framesFrente, pronto: () => 1, falhou: () => 1 };
-  const TEXTO = { virar: 'Vire o rosto devagar para um lado', frente: 'Agora olhe de frente para a câmera', pronto: 'Reconhecendo…', falhou: 'Não foi possível confirmar que é uma pessoa ao vivo' };
+  const TEXTO = {
+    virar: 'Mova a câmera levemente para um lado, com o rosto parado',
+    frente: 'Agora volte a câmera para a frente do rosto',
+    pronto: 'Reconhecendo…',
+    falhou: 'Não foi possível confirmar que é uma pessoa ao vivo',
+  };
 
   function estado(motivo) {
     const encerrado = fase === 'pronto' || fase === 'falhou';
@@ -105,6 +114,13 @@ export function criarRoteiroCadastro(passos = PASSOS_CADASTRO, opcoes = {}) {
     distante: (r) => deFrente(r) && (larguraDeFrente === 0 || r.largura <= larguraDeFrente * 0.85 || quadrosNoPasso > o.toleranciaDistante),
   };
   const atende = (passo, rosto) => (CONDICOES[passo.id] || deFrente)(rosto);
+  /** Dica para os passos de lado: rosto inteiro virado (ângulo demais) ou repetiu o lado do passo anterior. */
+  function dicaDeLado(passo, rosto) {
+    if (!PASSOS_DE_LADO.has(passo.id)) return null;
+    if (Math.abs(rosto.yaw ?? 0) > o.yawLadoMax) return 'demais';
+    if (passo.id === 'lado_b' && deLado(rosto) && Math.sign(rosto.yaw) === ladoInicial) return 'mesmo_lado';
+    return null;
+  }
 
   function estado(motivo) {
     const concluido = indice >= passos.length;
@@ -138,6 +154,8 @@ export function criarRoteiroCadastro(passos = PASSOS_CADASTRO, opcoes = {}) {
       if (pausa > 0) { pausa -= 1; return estado(); }
       quadrosNoPasso += 1;
       const passo = passos[indice];
+      const dica = dicaDeLado(passo, rosto);
+      if (dica) { coletados = []; return estado(dica); }
       if (!atende(passo, rosto)) { coletados = []; return estado(); }
       coletados.push(rosto);
       if (coletados.length >= o.framesPorPasso) concluirPasso(passo);

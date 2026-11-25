@@ -125,13 +125,23 @@ button, input, select { font: inherit; color: inherit; }
 .filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 @media (max-width: 480px) { .filtros { grid-template-columns: 1fr; } }
 .form-bloco { margin: 20px 0 8px; padding-bottom: 8px; }
-.dias { border: 0; padding: 0; margin: 0 0 20px; }
-.dias legend { font-size: var(--t-1); color: var(--tinta-suave); font-weight: 700; margin-bottom: 8px; }
-.dias-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-.dias-grade label { display: grid; place-items: center; min-height: 44px; border: 1.5px solid var(--grade); border-radius: 10px; cursor: pointer; font-size: var(--t-1); font-weight: 700; position: relative; }
-.dias-grade input { position: absolute; opacity: 0; pointer-events: none; }
-.dias-grade label:has(input:checked) { background: var(--carimbo); color: var(--sobre-carimbo); border-color: var(--carimbo); }
-.dias-grade label:has(input:focus-visible) { outline: 3px solid var(--carimbo); outline-offset: 2px; }
+/* ---------- convite para instalar ---------- */
+.instalar { margin: 12px 0 4px; padding: 14px; border: 1.5px solid var(--carimbo); border-radius: 12px; background: var(--superficie); font-size: var(--t-1); }
+.instalar p { margin: 0 0 10px; }
+.instalar-acoes { display: flex; gap: 8px; }
+.instalar-acoes .btn { width: auto; flex: 1; min-height: 44px; }
+
+/* grupo de opções em "chips" (dias da semana, câmera do cadastro) */
+.grupo { border: 0; padding: 0; margin: 0 0 20px; }
+.grupo legend { font-size: var(--t-1); color: var(--tinta-suave); font-weight: 700; margin-bottom: 8px; }
+.opcoes { display: grid; gap: 6px; }
+.opcoes-2 { grid-template-columns: 1fr 1fr; }
+.opcoes-7 { grid-template-columns: repeat(7, 1fr); }
+.opcoes label { display: grid; place-items: center; align-content: center; gap: 2px; min-height: 44px; padding: 6px; text-align: center; border: 1.5px solid var(--grade); border-radius: 10px; cursor: pointer; font-size: var(--t-1); font-weight: 700; position: relative; }
+.opcoes small { font-weight: 400; opacity: 0.85; }
+.opcoes input { position: absolute; opacity: 0; pointer-events: none; }
+.opcoes label:has(input:checked) { background: var(--carimbo); color: var(--sobre-carimbo); border-color: var(--carimbo); }
+.opcoes label:has(input:focus-visible) { outline: 3px solid var(--carimbo); outline-offset: 2px; }
 
 /* ---------- linha de cartão de ponto ---------- */
 .cartao-linha { margin-bottom: 18px; }
@@ -199,7 +209,8 @@ table.ponto tbody tr[data-func] { cursor: pointer; }
 
 /* ---------- câmera ---------- */
 .camera { position: fixed; inset: 0; z-index: 30; background: #000; color: #fff; }
-.camera video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.camera video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.camera video.espelhado { transform: scaleX(-1); }
 .guia { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .guia-fundo { fill: none; stroke: rgba(255,255,255,0.45); stroke-width: 0.8; }
 .guia-progresso {

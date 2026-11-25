@@ -40,7 +40,7 @@ export function criarTelaCamera({ camera, leitor, ia }) {
   }
 
   /** Abre a câmera numa sessão nova. Devolve a sessão, ou null se cancelaram enquanto abria. */
-  async function abrir({ comGps }) {
+  async function abrir({ comGps, frontal = true }) {
     fechar();
     const nova = { cancelado: false };
     sessao = nova;
@@ -51,7 +51,9 @@ export function criarTelaCamera({ camera, leitor, ia }) {
     acoes.hidden = true;
     progresso(0);
     instrucao('Abrindo câmera…');
-    await camera.abrir(video);
+    // Espelhar só a frontal: é o que a pessoa espera ver de si mesma; a traseira mostra a cena como ela é.
+    video.classList.toggle('espelhado', frontal);
+    await camera.abrir(video, { frontal });
     if (nova.cancelado) { camera.fechar(video); return null; }
     if (!ia.carregada()) instrucao('Carregando reconhecimento facial… (só demora na primeira vez)');
     return nova;
@@ -78,10 +80,10 @@ export function criarTelaCamera({ camera, leitor, ia }) {
    * interpretar(leitura) → { ok: true, valor } | { ok: false, mensagem }
    * Devolve { valor } | { pin: true } | null (cancelado).
    */
-  async function capturar({ comGps, ler, interpretar, podePin = () => false }) {
+  async function capturar({ comGps, frontal, ler, interpretar, podePin = () => false }) {
     let atual;
     try {
-      atual = await abrir({ comGps });
+      atual = await abrir({ comGps, frontal });
       if (!atual) return null;
     } catch (e) {
       return encerrar(await perguntar(e.message, { podeTentar: false, podePin: podePin(Infinity) }));
@@ -109,8 +111,9 @@ export function criarTelaCamera({ camera, leitor, ia }) {
     ler: (s) => leitor.lerParaPonto(video, { ajustes, sessao: s, aoEstado: mostrarEstado }),
   });
 
-  const capturarCadastro = ({ passos, ajustes }) => capturar({
+  const capturarCadastro = ({ passos, ajustes, frontal }) => capturar({
     comGps: false,
+    frontal,
     ler: (s) => leitor.lerParaCadastro(video, { passos, ajustes, sessao: s, aoEstado: mostrarPasso }),
     interpretar: (r) => (r.status === 'capturado' ? { ok: true, valor: r.templates } : { ok: false, mensagem: FALHA_CADASTRO[r.status] }),
   });

@@ -20,6 +20,7 @@ import { criarDialogoPin } from './ui/dialogoPin.js';
 import { $, criarAviso, mostrarTela } from './ui/dom.js';
 import { criarFluxoPonto } from './ui/fluxoPonto.js';
 import { criarTelaInicio } from './ui/inicio.js';
+import { criarConviteInstalacao } from './ui/instalacao.js';
 import { iniciarRelogio } from './ui/relogio.js';
 import { criarSucesso } from './ui/sucesso.js';
 import { criarTelaCamera } from './ui/telaCamera.js';
@@ -34,6 +35,7 @@ const aviso = criarAviso($('#aviso'));
 const diario = criarDiario({ preferencias: banco.preferencias });
 window.addEventListener('error', (e) => diario.registrar(e.message));
 window.addEventListener('unhandledrejection', (e) => diario.registrar(e.reason?.message || e.reason));
+criarConviteInstalacao({ preferencias: banco.preferencias }); // antes de qualquer await: o aviso do navegador chega cedo
 
 /** Registrado já na primeira abertura, antes mesmo de conectar: o app passa a abrir sem internet. */
 function registrarServiceWorker() {
