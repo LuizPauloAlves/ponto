@@ -84,4 +84,7 @@ export const CAMERAS = Object.freeze({ frontal: 'frontal', traseira: 'traseira' 
 
 export const PIN_TENTATIVAS = Object.freeze({ max: 5, bloqueioMs: 5 * 60000 });
 export const HISTORICO_LOCAL_DIAS = 45;
+
+/** Tela de abertura: fica até a IA estar pronta, entre estes limites (num celular, em geral 1,5 a 3 s). */
+export const ABERTURA = Object.freeze({ minimoMs: 1500, maximoMs: 4000 });
 export const HUMAN_VERSAO = '3.3.6';

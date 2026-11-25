@@ -5,7 +5,7 @@ import * as banco from './js/infra/banco.js';
 import { criarServidor } from './js/infra/servidor.js';
 import { criarSincronizador, SEM_TEMPORIZADOR } from './js/servicos/sincronizador.js';
 
-const VERSAO = 'ponto-v4';             // mude a cada nova versão do app: os celulares baixam tudo de novo
+const VERSAO = 'ponto-v5';             // mude a cada nova versão do app: os celulares baixam tudo de novo
 const RECURSOS = 'ponto-recursos-v1';  // biblioteca e modelos da IA: versão fixa, não mudam
 const TEMPO_DO_ENVIO_MS = 45000;
 
@@ -21,7 +21,7 @@ const ARQUIVOS_DO_APP = [
   './js/infra/banco.js', './js/infra/camera.js', './js/infra/gps.js', './js/infra/ia.js', './js/infra/servidor.js',
   './js/servicos/aparelho.js', './js/servicos/catalogo.js', './js/servicos/diario.js', './js/servicos/leitorFacial.js',
   './js/servicos/reconhecimento.js', './js/servicos/registroPonto.js', './js/servicos/sincronizador.js',
-  './js/ui/conexao.js', './js/ui/confirmacao.js', './js/ui/dialogoPin.js', './js/ui/dom.js', './js/ui/fluxoPonto.js',
+  './js/ui/abertura.js', './js/ui/conexao.js', './js/ui/confirmacao.js', './js/ui/dialogoPin.js', './js/ui/dom.js', './js/ui/fluxoPonto.js',
   './js/ui/inicio.js', './js/ui/instalacao.js', './js/ui/relogio.js', './js/ui/sucesso.js', './js/ui/telaCamera.js', './js/ui/textos.js',
   './js/ui/admin/admin.js', './js/ui/admin/ajustes.js', './js/ui/admin/locais.js', './js/ui/admin/manutencao.js',
   './js/ui/admin/pessoas.js', './js/ui/admin/relatorio.js',

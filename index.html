@@ -15,6 +15,15 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+  <!-- Abertura: segura o primeiro toque enquanto o reconhecimento facial carrega (ui/abertura.js) -->
+  <div id="abertura" class="abertura" role="status" aria-label="Carregando o app">
+    <div class="abertura-marca">PONTO</div>
+    <div class="abertura-furos" aria-hidden="true">
+      <i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i>
+    </div>
+    <p class="abertura-texto">Preparando o reconhecimento facial…</p>
+  </div>
+
   <main id="app">
 
     <!-- Convite para pôr o app na tela inicial (ui/instalacao.js decide o texto) -->

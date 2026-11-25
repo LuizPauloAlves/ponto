@@ -1,7 +1,7 @@
 // main.js — ponto de entrada. É o único arquivo que conhece todas as peças: cria cada uma,
 // entrega a cada outra o que ela precisa (injeção de dependências) e liga as telas.
 // Nenhum outro módulo importa banco, servidor ou tela diretamente para "se virar sozinho".
-import { HISTORICO_LOCAL_DIAS } from './config.js';
+import { ABERTURA, HISTORICO_LOCAL_DIAS } from './config.js';
 import * as banco from './infra/banco.js';
 import * as camera from './infra/camera.js';
 import * as ia from './infra/ia.js';
@@ -13,6 +13,7 @@ import { criarLeitorFacial } from './servicos/leitorFacial.js';
 import { criarReconhecimento } from './servicos/reconhecimento.js';
 import { criarRegistroPonto } from './servicos/registroPonto.js';
 import { criarSincronizador } from './servicos/sincronizador.js';
+import { criarAbertura } from './ui/abertura.js';
 import { criarAdmin } from './ui/admin/admin.js';
 import { criarConfirmacao } from './ui/confirmacao.js';
 import { aceitarLinkDeConfiguracao, criarTelaConexao } from './ui/conexao.js';
@@ -30,6 +31,7 @@ const ATUALIZAR_CADASTRO_MS = 30 * 60000;
 const CADASTRO_VELHO_MS = 10 * 60000;
 const TEMPO_DO_ENVIO_MS = 45000;
 
+const abertura = criarAbertura($('#abertura'), ABERTURA);
 const aviso = criarAviso($('#aviso'));
 const diario = criarDiario({ preferencias: banco.preferencias });
 window.addEventListener('error', (e) => diario.registrar(e.message));
@@ -47,8 +49,11 @@ function aoServiceWorkerEnviar(fn) {
   navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data?.tipo === 'fila-atualizada') fn(); });
 }
 
-/** Carrega a IA (a parte mais demorada) antes do toque em "Registrar ponto". Repetir é barato: carrega uma vez só. */
-const prepararIa = () => { if (!ia.carregada()) ia.carregar().catch((e) => diario.registrar(`IA: ${e.message}`)); };
+/**
+ * Carrega a IA (a parte mais demorada) antes do toque em "Registrar ponto". Repetir é barato: carrega uma vez só.
+ * A promessa termina quando a IA fica pronta ou falha (o erro vai para o diário; a câmera avisa a pessoa depois).
+ */
+const prepararIa = () => (ia.carregada() ? Promise.resolve() : ia.carregar().then(() => {}, (e) => diario.registrar(`IA: ${e.message}`)));
 
 /** Roda logo depois de a tela aparecer: o trabalho pesado não atrasa o primeiro desenho. */
 const depoisDoPrimeiroDesenho = (fn) => requestAnimationFrame(() => setTimeout(fn, 0));
@@ -64,7 +69,7 @@ async function iniciar() {
   const servidor = criarServidor({ obterConexao: () => banco.preferencias.ler('conexao') });
   const telaConexao = criarTelaConexao({ servidor, preferencias: banco.preferencias });
   const conexao = await banco.preferencias.ler('conexao');
-  if (!conexao) { telaConexao.mostrar(); return; }
+  if (!conexao) { telaConexao.mostrar(); abertura.encerrarQuando(); return; }
 
   // Serviços
   const aparelho = await carregarAparelho({ preferencias: banco.preferencias });
@@ -132,11 +137,12 @@ async function iniciar() {
   sincronizador.sincronizar();
   atualizarCatalogo();
   banco.historico.apagarAntesDe(Date.now() - HISTORICO_LOCAL_DIAS * DIA_MS).catch(() => {});
-  depoisDoPrimeiroDesenho(prepararIa);
+  depoisDoPrimeiroDesenho(() => abertura.encerrarQuando(prepararIa()));
   setInterval(() => { if (!document.hidden) atualizarCatalogo(); }, ATUALIZAR_CADASTRO_MS);
 }
 
 iniciar().catch((e) => {
+  abertura.encerrarQuando();
   diario.registrar(e.message);
   aviso.mostrar(`Erro ao iniciar: ${e.message}`, 8000);
 });
