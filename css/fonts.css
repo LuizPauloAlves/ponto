@@ -1,0 +1,5 @@
+/* Fontes hospedadas junto com o app (abre offline e não depende do Google Fonts).
+   Doto e Atkinson Hyperlegible: licença SIL Open Font License 1.1 (veja fonts/). */
+@font-face { font-family: 'Doto'; font-style: normal; font-weight: 800; font-display: swap; src: url('../fonts/doto-latin-800-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Atkinson Hyperlegible'; font-style: normal; font-weight: 400; font-display: swap; src: url('../fonts/atkinson-hyperlegible-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Atkinson Hyperlegible'; font-style: normal; font-weight: 700; font-display: swap; src: url('../fonts/atkinson-hyperlegible-latin-700-normal.woff2') format('woff2'); }

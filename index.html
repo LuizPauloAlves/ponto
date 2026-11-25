@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#4733B8">
+  <meta name="description" content="Registro de ponto com reconhecimento facial e GPS">
+  <title>Ponto</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="preload" href="fonts/doto-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <main id="app">
+
+    <!-- Primeiro uso: conectar ao Apps Script -->
+    <section id="tela-config" class="tela" hidden>
+      <h1 class="titulo-tela">Conectar à planilha</h1>
+      <p class="texto-apoio">Cole o endereço do Apps Script e o token que você definiu no código. Isso é feito uma vez por aparelho.</p>
+      <label class="campo">
+        <span>Endereço do Apps Script</span>
+        <input id="cfg-url" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+      </label>
+      <label class="campo">
+        <span>Token do app</span>
+        <input id="cfg-token" type="password" autocomplete="off">
+      </label>
+      <button id="cfg-conectar" class="btn btn-principal">Conectar</button>
+      <p id="cfg-erro" class="msg-erro" role="alert"></p>
+    </section>
+
+    <!-- Tela principal -->
+    <section id="tela-inicio" class="tela" hidden>
+      <header class="topo">
+        <span class="marca">Ponto</span>
+        <button id="btn-admin" class="btn-icone" aria-label="Área do administrador">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8.6 4.9-1.9 1.1.1 2.2-2.1.8-1 2-2.2-.4L12 20.9l-1.6-1.8-2.2.4-1-2-2.1-.8.1-2.2-1.9-1.1.7-2.1-.7-2.1 1.9-1.1-.1-2.2 2.1-.8 1-2 2.2.4L12 3.1l1.6 1.8 2.2-.4 1 2 2.1.8-.1 2.2 1.9 1.1-.7 2.1.7 2.1Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+
+      <div class="relogio" aria-live="off">
+        <time id="hora" class="hora">--:--</time>
+        <p id="data" class="data"></p>
+      </div>
+
+      <button id="btn-registrar" class="btn btn-principal btn-grande">Registrar ponto</button>
+      <p id="aviso-modo" class="texto-apoio" hidden></p>
+
+      <section class="bloco" aria-labelledby="t-hoje">
+        <h2 id="t-hoje" class="titulo-bloco">Hoje neste aparelho</h2>
+        <div id="lista-hoje"></div>
+      </section>
+
+      <button id="status-envio" class="status-envio" type="button"></button>
+    </section>
+
+    <!-- Administração -->
+    <section id="tela-admin" class="tela" hidden>
+      <header class="topo">
+        <button id="btn-voltar" class="btn-icone" aria-label="Voltar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="marca">Administração</span>
+      </header>
+
+      <nav class="abas" role="tablist" aria-label="Seções">
+        <button role="tab" data-aba="relatorio" aria-selected="true">Relatório</button>
+        <button role="tab" data-aba="pessoas" aria-selected="false">Pessoas</button>
+        <button role="tab" data-aba="locais" aria-selected="false">Locais</button>
+        <button role="tab" data-aba="ajustes" aria-selected="false">Ajustes</button>
+      </nav>
+
+      <div id="aba-relatorio" class="aba" role="tabpanel">
+        <div class="filtros">
+          <label class="campo">
+            <span>Funcionário</span>
+            <select id="rel-func"></select>
+          </label>
+          <label class="campo">
+            <span>Mês</span>
+            <select id="rel-mes"></select>
+          </label>
+        </div>
+        <button id="rel-gerar" class="btn btn-principal">Gerar relatório</button>
+        <div id="rel-saida" class="rel-saida"></div>
+      </div>
+
+      <div id="aba-pessoas" class="aba" role="tabpanel" hidden>
+        <button id="pes-nova" class="btn btn-principal">Cadastrar pessoa</button>
+        <form id="pes-form" class="form-bloco" hidden>
+          <label class="campo">
+            <span>Nome completo</span>
+            <input id="pes-nome" required maxlength="80" autocomplete="off">
+          </label>
+          <label class="campo">
+            <span>PIN de reserva (4 a 6 números, opcional)</span>
+            <input id="pes-pin" inputmode="numeric" pattern="[0-9]{4,6}" maxlength="6" autocomplete="off">
+          </label>
+          <p class="texto-apoio">Ao continuar, a câmera vai pedir 5 posições do rosto. Só os números gerados pela IA são guardados, nunca a foto.</p>
+          <label class="check">
+            <input id="pes-consentimento" type="checkbox" required>
+            <span>A pessoa autorizou o uso da biometria facial para registro de ponto (LGPD).</span>
+          </label>
+          <div class="linha-botoes">
+            <button type="submit" class="btn btn-principal">Capturar rosto</button>
+            <button type="button" id="pes-cancelar" class="btn btn-secundario">Cancelar</button>
+          </div>
+        </form>
+        <ul id="pes-lista" class="lista"></ul>
+      </div>
+
+      <div id="aba-locais" class="aba" role="tabpanel" hidden>
+        <p class="texto-apoio">O ponto só é aceito dentro do raio de um destes locais. Cadastre estando fisicamente no local.</p>
+        <form id="loc-form" class="form-bloco">
+          <label class="campo">
+            <span>Nome do local</span>
+            <input id="loc-nome" required maxlength="60" placeholder="Ex.: Loja Centro">
+          </label>
+          <label class="campo">
+            <span>Raio aceito (metros)</span>
+            <input id="loc-raio" type="number" min="30" max="2000" step="10" value="150" required>
+          </label>
+          <button type="submit" class="btn btn-principal">Salvar local onde estou agora</button>
+          <p id="loc-status" class="texto-apoio" role="status"></p>
+        </form>
+        <ul id="loc-lista" class="lista"></ul>
+      </div>
+
+      <div id="aba-ajustes" class="aba" role="tabpanel" hidden>
+        <section class="bloco">
+          <h2 class="titulo-bloco">Este aparelho</h2>
+          <label class="campo">
+            <span>Quem usa este aparelho</span>
+            <select id="aj-modo"></select>
+          </label>
+          <p class="texto-apoio">Celular pessoal: compara só com o dono, mais rápido e mais seguro. Compartilhado: reconhece qualquer pessoa cadastrada (ex.: tablet na entrada).</p>
+        </section>
+
+        <form id="aj-form" class="bloco">
+          <h2 class="titulo-bloco">Jornada</h2>
+          <label class="campo">
+            <span>Horas por dia (horas:minutos)</span>
+            <input id="aj-jornada" type="text" inputmode="numeric" pattern="\d{1,2}:[0-5]\d" placeholder="8:00" maxlength="5" required>
+          </label>
+          <fieldset class="dias">
+            <legend>Dias de trabalho</legend>
+            <div id="aj-dias" class="dias-grade"></div>
+          </fieldset>
+
+          <h2 class="titulo-bloco">Reconhecimento</h2>
+          <label class="campo">
+            <span>Rigor da comparação <output id="aj-limiar-v"></output></span>
+            <input id="aj-limiar" type="range" min="0.40" max="0.80" step="0.01">
+          </label>
+          <label class="campo">
+            <span>Rigor anti-foto <output id="aj-real-v"></output></span>
+            <input id="aj-real" type="range" min="0.20" max="0.90" step="0.05">
+          </label>
+          <label class="campo">
+            <span>Rigor de vivacidade <output id="aj-live-v"></output></span>
+            <input id="aj-live" type="range" min="0.20" max="0.90" step="0.05">
+          </label>
+          <label class="check">
+            <input id="aj-pin" type="checkbox">
+            <span>Permitir PIN quando o rosto não for reconhecido (fica marcado na planilha)</span>
+          </label>
+          <button type="submit" class="btn btn-principal">Salvar ajustes</button>
+        </form>
+
+        <section class="bloco">
+          <h2 class="titulo-bloco">Envios pendentes</h2>
+          <div id="aj-fila"></div>
+          <button id="aj-enviar" class="btn btn-secundario">Enviar agora</button>
+        </section>
+
+        <section class="bloco">
+          <h2 class="titulo-bloco">Desempenho</h2>
+          <dl id="aj-diag" class="diag"></dl>
+          <button id="aj-teste" class="btn btn-secundario">Testar desempenho da câmera</button>
+          <div id="aj-teste-res"></div>
+        </section>
+
+        <section class="bloco">
+          <h2 class="titulo-bloco">Conexão</h2>
+          <p id="aj-conexao" class="texto-apoio quebra"></p>
+          <div class="linha-botoes">
+            <button id="aj-link" class="btn btn-secundario">Copiar link de configuração</button>
+            <button id="aj-desconectar" class="btn btn-perigo">Desconectar aparelho</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- Câmera -->
+  <div id="camera" class="camera" hidden>
+    <video id="video" playsinline muted></video>
+    <svg class="guia" viewBox="0 0 100 130" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <ellipse cx="50" cy="60" rx="34" ry="44" class="guia-fundo"/>
+      <ellipse id="guia-progresso" cx="50" cy="60" rx="34" ry="44" class="guia-progresso" pathLength="100"/>
+    </svg>
+    <div class="camera-topo">
+      <button id="cam-fechar" class="btn-camera">Cancelar</button>
+      <span id="chip-gps" class="chip">Localizando…</span>
+    </div>
+    <div class="camera-base">
+      <p id="instrucao" class="instrucao" aria-live="polite">Abrindo câmera…</p>
+      <div id="cam-acoes" class="linha-botoes" hidden>
+        <button id="cam-tentar" class="btn btn-principal">Tentar de novo</button>
+        <button id="cam-pin" class="btn btn-secundario-claro" hidden>Usar PIN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmação do tipo de ponto -->
+  <div id="confirmar" class="folha-fundo" hidden>
+    <div class="folha" role="dialog" aria-modal="true" aria-labelledby="conf-nome">
+      <h2 id="conf-nome" class="folha-titulo"></h2>
+      <p id="conf-local" class="texto-apoio"></p>
+      <div id="conf-tipos" class="tipos"></div>
+      <p id="conf-erro" class="msg-erro" role="alert"></p>
+      <div class="linha-botoes">
+        <button id="conf-gps" class="btn btn-secundario" hidden>Buscar GPS de novo</button>
+        <button id="conf-cancelar" class="btn btn-secundario">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carimbo de sucesso -->
+  <div id="sucesso" class="sucesso" hidden>
+    <div class="carimbo" role="status">
+      <span id="suc-tipo" class="carimbo-tipo"></span>
+      <span id="suc-hora" class="carimbo-hora"></span>
+      <span id="suc-nome" class="carimbo-nome"></span>
+    </div>
+    <p id="suc-msg" class="sucesso-msg"></p>
+  </div>
+
+  <!-- PIN do funcionário -->
+  <dialog id="dlg-pin" class="dialogo">
+    <form method="dialog" id="pin-form">
+      <h2 class="folha-titulo">Registrar com PIN</h2>
+      <label class="campo">
+        <span>Quem é você</span>
+        <select id="pin-func" required></select>
+      </label>
+      <label class="campo">
+        <span>PIN</span>
+        <input id="pin-valor" type="password" inputmode="numeric" maxlength="6" autocomplete="off" required>
+      </label>
+      <p id="pin-erro" class="msg-erro" role="alert"></p>
+      <div class="linha-botoes">
+        <button value="ok" class="btn btn-principal">Continuar</button>
+        <button value="cancelar" formnovalidate class="btn btn-secundario">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- PIN do administrador -->
+  <dialog id="dlg-admin" class="dialogo">
+    <form method="dialog" id="admin-form">
+      <h2 class="folha-titulo">PIN do administrador</h2>
+      <label class="campo">
+        <span>PIN</span>
+        <input id="admin-pin" type="password" autocomplete="off" required>
+      </label>
+      <p id="admin-erro" class="msg-erro" role="alert"></p>
+      <div class="linha-botoes">
+        <button value="ok" class="btn btn-principal">Entrar</button>
+        <button value="cancelar" formnovalidate class="btn btn-secundario">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="aviso" class="aviso" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
