@@ -5,7 +5,7 @@ import * as banco from './js/infra/banco.js';
 import { criarServidor } from './js/infra/servidor.js';
 import { criarSincronizador, SEM_TEMPORIZADOR } from './js/servicos/sincronizador.js';
 
-const VERSAO = 'ponto-v3';             // mude a cada nova versão do app: os celulares baixam tudo de novo
+const VERSAO = 'ponto-v4';             // mude a cada nova versão do app: os celulares baixam tudo de novo
 const RECURSOS = 'ponto-recursos-v1';  // biblioteca e modelos da IA: versão fixa, não mudam
 const TEMPO_DO_ENVIO_MS = 45000;
 
