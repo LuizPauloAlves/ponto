@@ -4,7 +4,7 @@
 import { AJUSTES_PADRAO, CAPTURA, PASSOS_CADASTRO } from '../config.js';
 import { mediaVetores } from './biometria.js';
 
-const INSTRUCOES = Object.freeze({
+export const INSTRUCOES = Object.freeze({
   sem_rosto: 'Posicione o rosto dentro do oval',
   longe: 'Aproxime a câmera do rosto',
   demais: 'Passou do ponto: volte a câmera um pouco',
@@ -25,12 +25,15 @@ function criarJanela(max = Infinity) {
   };
 }
 
-/** O rosto serve para comparar? { ok } ou { ok: false, motivo }. */
-export function avaliarRosto(rosto, larguraVideo, regras = CAPTURA) {
+/**
+ * O rosto serve? { ok } ou { ok: false, motivo }.
+ * `exigirVetor: false` vale para quadros lidos sem a impressão facial (só posição, anti-foto e vivacidade).
+ */
+export function avaliarRosto(rosto, larguraVideo, { regras = CAPTURA, exigirVetor = true } = {}) {
   if (!rosto) return { ok: false, motivo: 'sem_rosto' };
   if ((rosto.score ?? 0) < regras.scoreMin) return { ok: false, motivo: 'baixa_qualidade' };
   if ((rosto.largura ?? 0) < Math.max(regras.larguraMinPx, larguraVideo * regras.larguraMinFracao)) return { ok: false, motivo: 'longe' };
-  if (!rosto.embedding?.length) return { ok: false, motivo: 'baixa_qualidade' };
+  if (exigirVetor && !rosto.embedding?.length) return { ok: false, motivo: 'baixa_qualidade' };
   return { ok: true };
 }
 
@@ -43,6 +46,7 @@ export function vivacidadeAprovada(real, live, { minReal, minLive }) {
  * Desafio de vivacidade: mudar o ângulo câmera/rosto para um lado e voltar de frente. Uma foto parada
  * não consegue. Somado aos modelos antispoof e liveness da Human, dificulta bastante fraudes.
  * Fases: procurando → virar → frente → pronto | falhou.
+ * Só a fase "frente" usa a impressão facial (precisaVetor): antes dela, ler o vetor seria trabalho jogado fora.
  */
 export function criarDesafio(opcoes = {}) {
   const o = { ...CAPTURA, minReal: AJUSTES_PADRAO.minReal, minLive: AJUSTES_PADRAO.minLive, ...opcoes };
@@ -79,6 +83,7 @@ export function criarDesafio(opcoes = {}) {
   }
 
   return {
+    precisaVetor: () => fase === 'frente',
     atualizar(rosto, qualidade) {
       if (fase === 'pronto' || fase === 'falhou') return estado();
       if (!rosto || (qualidade && !qualidade.ok)) {

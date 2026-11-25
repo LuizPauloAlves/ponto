@@ -1,6 +1,7 @@
 // telaCamera.js — a tela cheia da câmera: abre, mostra instruções e progresso, e repete a
 // leitura quando a pessoa pede. O laço "abrir → ler → falhou? tentar de novo / PIN / cancelar"
 // existe uma vez só (capturar) e serve ao ponto e ao cadastro.
+import { INSTRUCOES } from '../dominio/captura.js';
 import { $ } from './dom.js';
 import { FALHA_CADASTRO } from './textos.js';
 
@@ -53,9 +54,11 @@ export function criarTelaCamera({ camera, leitor, ia }) {
     instrucao('Abrindo câmera…');
     // Espelhar só a frontal: é o que a pessoa espera ver de si mesma; a traseira mostra a cena como ela é.
     video.classList.toggle('espelhado', frontal);
+    // IA e câmera carregam juntas. Se a IA falhar, o erro aparece na leitura, com a opção de PIN.
+    if (!ia.carregada()) ia.carregar().catch(() => {});
     await camera.abrir(video, { frontal });
     if (nova.cancelado) { camera.fechar(video); return null; }
-    if (!ia.carregada()) instrucao('Carregando reconhecimento facial… (só demora na primeira vez)');
+    instrucao(ia.carregada() ? INSTRUCOES.sem_rosto : 'Carregando reconhecimento facial… (só demora na primeira vez)');
     return nova;
   }
 

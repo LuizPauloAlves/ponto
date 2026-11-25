@@ -29,6 +29,10 @@ const CONFIG_HUMAN = {
   segmentation: { enabled: false },
 };
 
+// A Human guarda a configuração de cada leitura para as próximas: por isso toda leitura diz qual quer.
+const LEITURA_COMPLETA = Object.freeze({ face: { description: { enabled: true } } });
+const LEITURA_SEM_VETOR = Object.freeze({ face: { description: { enabled: false } } }); // pula o modelo mais pesado
+
 let human = null;
 let carregando = null;
 const tempos = [];
@@ -67,10 +71,13 @@ function paraRosto(f) {
   };
 }
 
-/** Lê um quadro (vídeo ou imagem) e devolve o rosto encontrado, ou null. */
-export async function lerRosto(fonte) {
+/**
+ * Lê um quadro (vídeo ou imagem) e devolve o rosto encontrado, ou null.
+ * `comVetor: false` não calcula a impressão facial (embedding fica null); o resto da leitura é igual.
+ */
+export async function lerRosto(fonte, { comVetor = true } = {}) {
   const inicio = performance.now();
-  const resultado = await human.detect(fonte);
+  const resultado = await human.detect(fonte, comVetor ? LEITURA_COMPLETA : LEITURA_SEM_VETOR);
   tempos.push(performance.now() - inicio);
   if (tempos.length > AMOSTRAS_DE_TEMPO) tempos.shift();
   return paraRosto(resultado.face?.[0]);
@@ -99,7 +106,7 @@ export async function medirDesempenho(fonte, leituras, aoProgresso, sessao) {
   const tensores = [];
   for (let i = 0; i < leituras && !sessao.cancelado; i++) {
     const inicio = performance.now();
-    await human.detect(fonte);
+    await human.detect(fonte, LEITURA_COMPLETA);
     ms.push(performance.now() - inicio);
     tensores.push(human.tf?.memory?.().numTensors ?? 0);
     if (i % 5 === 0) aoProgresso((i + 1) / leituras);

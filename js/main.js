@@ -28,7 +28,6 @@ import { criarTelaCamera } from './ui/telaCamera.js';
 const DIA_MS = 86400000;
 const ATUALIZAR_CADASTRO_MS = 30 * 60000;
 const CADASTRO_VELHO_MS = 10 * 60000;
-const PRE_CARGA_DA_IA_MS = 1500;
 const TEMPO_DO_ENVIO_MS = 45000;
 
 const aviso = criarAviso($('#aviso'));
@@ -47,6 +46,12 @@ function registrarServiceWorker() {
 function aoServiceWorkerEnviar(fn) {
   navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data?.tipo === 'fila-atualizada') fn(); });
 }
+
+/** Carrega a IA (a parte mais demorada) antes do toque em "Registrar ponto". Repetir é barato: carrega uma vez só. */
+const prepararIa = () => { if (!ia.carregada()) ia.carregar().catch((e) => diario.registrar(`IA: ${e.message}`)); };
+
+/** Roda logo depois de a tela aparecer: o trabalho pesado não atrasa o primeiro desenho. */
+const depoisDoPrimeiroDesenho = (fn) => requestAnimationFrame(() => setTimeout(fn, 0));
 
 /** No Android, pede ao navegador que envie a fila quando a internet voltar, mesmo com o app fechado. */
 function pedirEnvioEmSegundoPlano() {
@@ -114,7 +119,9 @@ async function iniciar() {
   window.addEventListener('hashchange', rotear);
   window.addEventListener('online', () => sincronizador.sincronizar({ forcar: true }));
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && catalogo.idadeMs() > CADASTRO_VELHO_MS) atualizarCatalogo();
+    if (document.hidden) return;
+    prepararIa(); // se falhou antes (ex.: sem internet na primeira vez), tenta de novo ao voltar ao app
+    if (catalogo.idadeMs() > CADASTRO_VELHO_MS) atualizarCatalogo();
   });
   aoServiceWorkerEnviar(() => sincronizador.notificar());
 
@@ -125,7 +132,7 @@ async function iniciar() {
   sincronizador.sincronizar();
   atualizarCatalogo();
   banco.historico.apagarAntesDe(Date.now() - HISTORICO_LOCAL_DIAS * DIA_MS).catch(() => {});
-  setTimeout(() => ia.carregar().catch((e) => diario.registrar(`IA: ${e.message}`)), PRE_CARGA_DA_IA_MS);
+  depoisDoPrimeiroDesenho(prepararIa);
   setInterval(() => { if (!document.hidden) atualizarCatalogo(); }, ATUALIZAR_CADASTRO_MS);
 }
 
