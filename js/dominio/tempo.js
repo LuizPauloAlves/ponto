@@ -26,6 +26,20 @@ export function inicioDoDia(ts) {
   return d.getTime();
 }
 
+/** Instante das 00:00 do dia seguinte (certo mesmo em dia de horário de verão). */
+export function inicioDoDiaSeguinte(ts) {
+  const d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+}
+
+/** Instante do horário "HH:MM" no dia de `ts`. Horário inválido → null. */
+export function instanteNoDia(ts, hora) {
+  const minutos = paraMinutos(hora);
+  if (minutos === null) return null;
+  const d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), Math.floor(minutos / 60), minutos % 60).getTime();
+}
+
 /** "08:05" ou "8:05" → 485 minutos. Texto inválido → null. */
 export function paraMinutos(texto) {
   if (texto === null || texto === undefined) return null;

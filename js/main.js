@@ -10,6 +10,8 @@ import { carregarAparelho } from './servicos/aparelho.js';
 import { criarCatalogo } from './servicos/catalogo.js';
 import { criarDiario } from './servicos/diario.js';
 import { criarLeitorFacial } from './servicos/leitorFacial.js';
+import { criarModoDeUso, MODO } from './servicos/modoDeUso.js';
+import { criarMeuPonto } from './servicos/meuPonto.js';
 import { criarReconhecimento } from './servicos/reconhecimento.js';
 import { criarRegistroPonto } from './servicos/registroPonto.js';
 import { criarSincronizador } from './servicos/sincronizador.js';
@@ -22,6 +24,10 @@ import { $, criarAviso, mostrarTela } from './ui/dom.js';
 import { criarFluxoPonto } from './ui/fluxoPonto.js';
 import { criarTelaInicio } from './ui/inicio.js';
 import { criarConviteInstalacao } from './ui/instalacao.js';
+import { criarAjustesPessoais } from './ui/meuPonto/ajustesPessoais.js';
+import { criarEditorDia } from './ui/meuPonto/editorDia.js';
+import { criarInicioPessoal } from './ui/meuPonto/inicioPessoal.js';
+import { criarMeuMes } from './ui/meuPonto/meuMes.js';
 import { iniciarRelogio } from './ui/relogio.js';
 import { criarSucesso } from './ui/sucesso.js';
 import { criarTelaCamera } from './ui/telaCamera.js';
@@ -34,6 +40,7 @@ const TEMPO_DO_ENVIO_MS = 45000;
 const abertura = criarAbertura($('#abertura'), ABERTURA);
 const aviso = criarAviso($('#aviso'));
 const diario = criarDiario({ preferencias: banco.preferencias });
+const modoDeUso = criarModoDeUso({ preferencias: banco.preferencias });
 window.addEventListener('error', (e) => diario.registrar(e.message));
 window.addEventListener('unhandledrejection', (e) => diario.registrar(e.reason?.message || e.reason));
 criarConviteInstalacao({ preferencias: banco.preferencias }); // antes de qualquer await: o aviso do navegador chega cedo
@@ -63,14 +70,61 @@ function pedirEnvioEmSegundoPlano() {
   navigator.serviceWorker?.ready.then((r) => r.sync?.register('enviar-pontos')).catch(() => {});
 }
 
+/** O navegador promete não apagar os dados sozinho? (Em geral sim com o app instalado.) */
+const pedirArmazenamentoGarantido = () => navigator.storage?.persist?.().catch(() => false) ?? Promise.resolve(false);
+
+/** Modo "só neste celular": registrar, ver o mês, corrigir e exportar. Sem rosto, GPS nem servidor. */
+function iniciarModoPessoal() {
+  abertura.mostrarTexto('Abrindo o seu ponto…');
+  const meuPonto = criarMeuPonto({ armazem: banco.meuPonto, preferencias: banco.preferencias });
+  const meuMes = criarMeuMes({ meuPonto, editorDia: criarEditorDia({ meuPonto }), aviso });
+  const ajustes = criarAjustesPessoais({
+    meuPonto, aviso,
+    aoSalvar: () => meuMes.atualizar(),
+    aoTrocarParaEmpresa: async () => { await modoDeUso.voltarParaEscolha(); location.replace(location.pathname); },
+  });
+  const inicio = criarInicioPessoal({
+    meuPonto, confirmacao: criarConfirmacao(), sucesso: criarSucesso(),
+    aoAbrirMes: () => { location.hash = 'meu'; },
+  });
+
+  function rotear() {
+    aviso.esconder();
+    if (location.hash === '#meu') {
+      mostrarTela('meu');
+      meuMes.mostrar();
+      ajustes.mostrar();
+      return;
+    }
+    mostrarTela('inicio');
+    inicio.atualizarHoje();
+  }
+
+  $('#meu-voltar').addEventListener('click', () => history.back());
+  window.addEventListener('hashchange', rotear);
+  if (location.hash === '#meu') history.replaceState(null, '', location.pathname); // sempre abre no início
+  rotear();
+  iniciarRelogio({ hora: $('#hora'), data: $('#data'), agora: Date.now, aoMudarDia: inicio.atualizarHoje });
+  pedirArmazenamentoGarantido().then(inicio.mostrarStatus);
+  abertura.encerrarQuando({ minimoMs: ABERTURA.pessoalMs }); // sem câmera nem GPS: só a animação, mais curta
+}
+
 async function iniciar() {
   registrarServiceWorker();
   await aceitarLinkDeConfiguracao(banco.preferencias);
   const servidor = criarServidor({ obterConexao: () => banco.preferencias.ler('conexao') });
-  const telaConexao = criarTelaConexao({ servidor, preferencias: banco.preferencias });
-  const conexao = await banco.preferencias.ler('conexao');
-  if (!conexao) { telaConexao.mostrar(); abertura.encerrarQuando(); return; }
+  const telaConexao = criarTelaConexao({ servidor, preferencias: banco.preferencias, modoDeUso });
+  const modo = await modoDeUso.atual(); // abre direto no modo escolhido antes
+  if (modo === MODO.empresa) return iniciarModoEmpresa({ conexao: await banco.preferencias.ler('conexao'), servidor, telaConexao });
+  if (modo === MODO.pessoal) return iniciarModoPessoal();
+  telaConexao.mostrar();
+  abertura.encerrarQuando();
+  return undefined;
+}
 
+/** Modo empresa: rosto, GPS e envio para a planilha do Drive. */
+async function iniciarModoEmpresa({ conexao, servidor, telaConexao }) {
+  abertura.mostrarTexto('Preparando o reconhecimento facial…');
   // Serviços
   const aparelho = await carregarAparelho({ preferencias: banco.preferencias });
   const catalogo = criarCatalogo({ preferencias: banco.preferencias, servidor });
@@ -114,7 +168,7 @@ async function iniciar() {
     aoRegistrar: () => { telaInicio.atualizarHoje(); pedirEnvioEmSegundoPlano(); },
   });
   const admin = criarAdmin({
-    servidor, catalogo, aparelho, sincronizador, reconhecimento, telaCamera, ia, banco, diario, aviso,
+    servidor, catalogo, aparelho, sincronizador, reconhecimento, telaCamera, ia, banco, diario, aviso, modoDeUso,
     aoSair: rotear,
     aoMudarDono: () => { telaInicio.atualizarModo(); telaInicio.atualizarHoje(); },
   });
@@ -137,7 +191,7 @@ async function iniciar() {
   sincronizador.sincronizar();
   atualizarCatalogo();
   banco.historico.apagarAntesDe(Date.now() - HISTORICO_LOCAL_DIAS * DIA_MS).catch(() => {});
-  depoisDoPrimeiroDesenho(() => abertura.encerrarQuando(prepararIa()));
+  depoisDoPrimeiroDesenho(() => abertura.encerrarQuando({ pronto: prepararIa() }));
   setInterval(() => { if (!document.hidden) atualizarCatalogo(); }, ATUALIZAR_CADASTRO_MS);
 }
 

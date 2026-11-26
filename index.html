@@ -21,7 +21,7 @@
     <div class="abertura-furos" aria-hidden="true">
       <i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i>
     </div>
-    <p class="abertura-texto">Preparando o reconhecimento facial…</p>
+    <p class="abertura-texto">Preparando…</p>
   </div>
 
   <main id="app">
@@ -35,10 +35,11 @@
       </div>
     </aside>
 
-    <!-- Primeiro uso: conectar ao Apps Script -->
+    <!-- Primeiro uso: conectar ao Apps Script (opção 1) ou usar só neste celular (opção 2) -->
     <section id="tela-config" class="tela" hidden>
-      <h1 class="titulo-tela">Conectar à planilha</h1>
-      <p class="texto-apoio">Cole o endereço do Apps Script e o token que você definiu no código. Isso é feito uma vez por aparelho.</p>
+      <h1 class="titulo-tela">Como você vai usar o Ponto?</h1>
+      <h2 class="titulo-opcao"><span>1</span> Empresa: conectar à planilha</h2>
+      <p class="texto-apoio">Rosto, GPS e envio para a planilha no Google Drive. Cole o endereço do Apps Script e o token definido nas Propriedades do script. Isso é feito uma vez por aparelho.</p>
       <label class="campo">
         <span>Endereço do Apps Script</span>
         <input id="cfg-url" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
@@ -49,6 +50,12 @@
       </label>
       <button id="cfg-conectar" class="btn btn-principal">Conectar</button>
       <p id="cfg-erro" class="msg-erro" role="alert"></p>
+
+      <div class="opcao-pessoal">
+        <h2 class="titulo-opcao"><span>2</span> Só para mim, neste celular</h2>
+        <p class="texto-apoio">Sem rosto, sem GPS e sem internet: seus horários ficam guardados só neste celular, com o resumo do mês, correções e exportação para planilha.</p>
+        <button id="cfg-pessoal" class="btn btn-secundario">Usar só neste celular</button>
+      </div>
     </section>
 
     <!-- Tela principal -->
@@ -74,6 +81,59 @@
       </section>
 
       <button id="status-envio" class="status-envio" type="button"></button>
+    </section>
+
+    <!-- Meu ponto (modo só neste celular): mês, exportação e ajustes -->
+    <section id="tela-meu" class="tela" hidden>
+      <header class="topo">
+        <button id="meu-voltar" class="btn-icone" aria-label="Voltar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="marca">Meu mês</span>
+      </header>
+
+      <div class="seletor-mes">
+        <button id="meu-anterior" class="btn-icone" aria-label="Mês anterior">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <h1 id="meu-titulo" class="seletor-mes-titulo" aria-live="polite"></h1>
+        <button id="meu-proximo" class="btn-icone" aria-label="Próximo mês">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div id="meu-saida"></div>
+
+      <section class="bloco" aria-labelledby="t-exportar">
+        <h2 id="t-exportar" class="titulo-bloco">Exportar para planilha</h2>
+        <p class="texto-apoio">Os horários ficam só neste celular. Exporte de vez em quando: o arquivo abre no Excel e no Google Planilhas, e "Exportar tudo" serve de cópia de segurança.</p>
+        <div class="linha-botoes">
+          <button id="meu-exportar-mes" class="btn btn-principal">Exportar o mês</button>
+          <button id="meu-exportar-tudo" class="btn btn-secundario">Exportar tudo</button>
+        </div>
+      </section>
+
+      <form id="meu-ajustes" class="bloco" aria-labelledby="t-meus-ajustes">
+        <h2 id="t-meus-ajustes" class="titulo-bloco">Ajustes</h2>
+        <label class="campo">
+          <span>Seu nome (opcional, aparece no carimbo)</span>
+          <input id="meu-nome" type="text" autocomplete="given-name" maxlength="60">
+        </label>
+        <label class="campo">
+          <span>Horas por dia</span>
+          <input id="meu-jornada" type="text" inputmode="numeric" placeholder="8:00" autocomplete="off">
+        </label>
+        <fieldset class="grupo">
+          <legend>Dias de trabalho</legend>
+          <div id="meu-dias" class="opcoes opcoes-7"></div>
+        </fieldset>
+        <button type="submit" class="btn btn-principal">Salvar ajustes</button>
+      </form>
+
+      <section class="bloco" aria-labelledby="t-empresa">
+        <h2 id="t-empresa" class="titulo-bloco">Este celular</h2>
+        <p class="texto-apoio">Ele abre sempre na opção 2 (só neste celular). Para conectar ao servidor da empresa, com rosto, GPS e planilha no Drive, troque para a opção 1. Os horários guardados aqui continuam no celular.</p>
+        <button id="meu-conectar" class="btn btn-secundario">Trocar para a opção 1 (empresa)</button>
+      </section>
     </section>
 
     <!-- Administração -->
@@ -210,10 +270,12 @@
         </section>
 
         <section class="bloco">
-          <h2 class="titulo-bloco">Conexão</h2>
+          <h2 class="titulo-bloco">Este aparelho</h2>
           <p id="aj-conexao" class="texto-apoio quebra"></p>
+          <p class="texto-apoio">Ele abre sempre na opção 1 (empresa). Para usar só como controle pessoal, troque para a opção 2; para mostrar de novo a escolha entre as duas, desconecte.</p>
           <div class="linha-botoes">
             <button id="aj-link" class="btn btn-secundario">Copiar link de configuração</button>
+            <button id="aj-pessoal" class="btn btn-secundario">Trocar para a opção 2</button>
             <button id="aj-desconectar" class="btn btn-perigo">Desconectar aparelho</button>
           </div>
         </section>
@@ -286,6 +348,24 @@
   </dialog>
 
   <!-- PIN do administrador -->
+  <!-- Meu ponto: corrigir um dia -->
+  <dialog id="dlg-dia" class="dialogo" aria-labelledby="dia-titulo">
+    <h2 id="dia-titulo" class="folha-titulo"></h2>
+    <ul id="dia-lista" class="lista-batidas"></ul>
+    <form id="dia-novo" class="batida-nova">
+      <p class="titulo-bloco">Incluir um horário esquecido</p>
+      <div class="batida">
+        <select id="dia-tipo" aria-label="Tipo do ponto"></select>
+        <input id="dia-hora" type="time" required aria-label="Horário">
+        <button type="submit" class="btn btn-secundario">Incluir</button>
+      </div>
+    </form>
+    <p id="dia-erro" class="msg-erro" role="alert"></p>
+    <form method="dialog" class="linha-botoes">
+      <button class="btn btn-principal">Pronto</button>
+    </form>
+  </dialog>
+
   <dialog id="dlg-admin" class="dialogo">
     <form method="dialog" id="admin-form">
       <h2 class="folha-titulo">PIN do administrador</h2>

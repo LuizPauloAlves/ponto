@@ -1,7 +1,7 @@
 // banco.js — armazenamento no aparelho (IndexedDB). É o ÚNICO lugar que conhece o esquema:
 // a página e o service worker importam este mesmo módulo (antes o esquema era copiado nos dois).
 const NOME = 'ponto-facial';
-const VERSAO = 1;
+const VERSAO = 2; // 2: loja "meuPonto" (modo só neste celular)
 let conexao = null;
 
 function criarEsquema(db) {
@@ -9,6 +9,9 @@ function criarEsquema(db) {
   if (!db.objectStoreNames.contains('fila')) db.createObjectStore('fila', { keyPath: 'id' });
   if (!db.objectStoreNames.contains('registros')) {
     db.createObjectStore('registros', { keyPath: 'id' }).createIndex('timestamp', 'timestamp');
+  }
+  if (!db.objectStoreNames.contains('meuPonto')) {
+    db.createObjectStore('meuPonto', { keyPath: 'id' }).createIndex('timestamp', 'timestamp');
   }
 }
 
@@ -57,6 +60,7 @@ const atualizarExistentes = (s, itens, alterar) => itens.forEach((item) => {
 export const preferencias = Object.freeze({
   ler: (chave) => ler('kv', (s) => s.get(chave)),
   gravar: (chave, valor) => gravar('kv', (s) => { s.put(valor, chave); }),
+  apagar: (chave) => gravar('kv', (s) => { s.delete(chave); }),
 });
 
 /** Registros aguardando a confirmação do servidor. */
@@ -86,4 +90,12 @@ export const historico = Object.freeze({
       c.continue();
     };
   }),
+});
+
+/** Pontos do modo "só neste celular": ficam aqui sem prazo, porque não há planilha por trás. */
+export const meuPonto = Object.freeze({
+  entre: (inicio, fim) => ler('meuPonto', (s) => s.index('timestamp').getAll(IDBKeyRange.bound(inicio, fim, false, true))),
+  todos: () => ler('meuPonto', (s) => s.getAll()),
+  gravar: (registro) => gravar('meuPonto', (s) => { s.put(registro); }),
+  apagar: (id) => gravar('meuPonto', (s) => { s.delete(id); }),
 });

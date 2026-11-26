@@ -44,6 +44,7 @@ export function criarConfirmacao() {
     if (!aberta) return;
     travar(true);
     erro.textContent = '';
+    if (!aberta.gps) { await salvar(aberta, tipo); return; }
     let posicao;
     try {
       posicao = await aberta.gps.posicao();
@@ -54,6 +55,10 @@ export function criarConfirmacao() {
     if (atual !== aberta) return;
     const local = aberta.avaliar(posicao);
     if (!local.ok) { recusar(motivoDaRecusa(local)); return; }
+    await salvar(aberta, tipo, posicao, local);
+  }
+
+  async function salvar(aberta, tipo, posicao, local) {
     try {
       fechar(await aberta.registrar(tipo, posicao, local));
     } catch (e) {
@@ -64,21 +69,23 @@ export function criarConfirmacao() {
   /**
    * Abre a folha e resolve com o registro feito, ou null se a pessoa cancelar.
    * gps: { posicao(), iniciar() }; avaliar(pos) → local; registrar(tipo, pos, local) → registro
+   * Sem `gps` (modo só neste celular), a escolha do tipo já salva.
    */
-  function abrir({ pessoa, sugerido, gps, avaliar, registrar }) {
+  function abrir({ pessoa, sugerido, gps = null, avaliar, registrar }) {
     fechar(null);
     return new Promise((resolver) => {
       atual = { resolver, gps, avaliar, registrar };
-      titulo.textContent = `Olá, ${primeiroNome(pessoa.nome)}`;
+      titulo.textContent = pessoa?.nome ? `Olá, ${primeiroNome(pessoa.nome)}` : 'Qual ponto você vai registrar?';
       erro.textContent = '';
       botaoGps.hidden = true;
+      textoLocal.hidden = !gps;
       tipos.replaceChildren(...TIPOS_PONTO.map((t) => el('button', {
         class: `tipo${t.id === sugerido ? ' sugerido' : ''}`,
         type: 'button',
         onclick: () => escolher(t.id),
       }, t.rotulo, t.id === sugerido ? el('small', { text: 'sugerido' }) : null)));
       raiz.hidden = false;
-      acompanharGps();
+      if (gps) acompanharGps();
       tipos.querySelector('.sugerido')?.focus();
     });
   }

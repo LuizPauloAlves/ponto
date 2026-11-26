@@ -28,7 +28,15 @@ function descreverItemDaFila(item, agora) {
   return `${r.nome}, ${rotuloDoTipo(r.tipo)} ${horaLocal(r.timestamp)} (${dataCurta(r.timestamp)}). ${item.tentativas} tentativa(s).${erro} ${proxima}`;
 }
 
-export function criarSecaoManutencao({ sincronizador, ia, banco, diario, telaCamera, aviso }) {
+/** Aviso antes de sair do modo empresa: o que acontece com o cadastro e com os envios pendentes. */
+function avisoDeSaida(acao, pendentes) {
+  const fila = pendentes
+    ? ` ${pendentes} ponto(s) ainda não foram para a planilha: ficam guardados e são enviados se este aparelho for conectado de novo a este servidor.`
+    : '';
+  return `${acao} O cadastro baixado (com os modelos faciais) é apagado deste aparelho.${fila}`;
+}
+
+export function criarSecaoManutencao({ sincronizador, ia, banco, diario, telaCamera, aviso, catalogo, aparelho, modoDeUso }) {
   const fila = $('#aj-fila');
   const diagnostico = $('#aj-diag');
   const resultadoTeste = $('#aj-teste-res');
@@ -85,9 +93,12 @@ export function criarSecaoManutencao({ sincronizador, ia, banco, diario, telaCam
     }
   }
 
-  async function desconectar() {
-    if (!window.confirm('Desconectar este aparelho? Envios pendentes continuam guardados.')) return;
-    await banco.preferencias.gravar('conexao', null);
+  /** Sai do modo empresa (desconectar ou trocar para a opção 2), depois de confirmar. */
+  async function sairDoModoEmpresa(pergunta, trocar) {
+    if (!window.confirm(avisoDeSaida(pergunta, await banco.fila.contar()))) return;
+    await catalogo.esquecer();
+    await aparelho.definirDono(null);
+    await trocar();
     location.replace(location.pathname);
   }
 
@@ -98,7 +109,10 @@ export function criarSecaoManutencao({ sincronizador, ia, banco, diario, telaCam
   });
   $('#aj-teste').addEventListener('click', testarDesempenho);
   $('#aj-link').addEventListener('click', copiarLink);
-  $('#aj-desconectar').addEventListener('click', desconectar);
+  $('#aj-desconectar').addEventListener('click', () =>
+    sairDoModoEmpresa('Desconectar este aparelho? Na próxima abertura ele mostra a escolha entre as opções 1 e 2.', modoDeUso.voltarParaEscolha));
+  $('#aj-pessoal').addEventListener('click', () =>
+    sairDoModoEmpresa('Trocar este aparelho para a opção 2 (só neste celular, sem rosto e sem GPS)?', modoDeUso.usarSoNesteCelular));
   sincronizador.aoMudar((estado) => { if (visivel()) mostrarFila(estado); });
 
   return {

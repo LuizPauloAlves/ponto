@@ -4,29 +4,32 @@ import { horaLocal } from '../dominio/tempo.js';
 import { $, el } from './dom.js';
 import { statusDeEnvio } from './textos.js';
 
+const aguardandoEnvio = (registro) => registro.status !== 'enviado';
+
+function celula(tipo, registro, pendente) {
+  const situacao = !registro ? 'vazio' : pendente(registro) ? 'pendente' : '';
+  return el('div', { class: 'cartao-celula' },
+    el('span', { class: 'cartao-rotulo', text: tipo.rotulo }),
+    el('span', {
+      class: `cartao-hora ${situacao}`.trim(),
+      title: situacao === 'pendente' ? 'Aguardando envio para a planilha' : null,
+      text: registro ? horaLocal(registro.timestamp) : '--:--',
+    }));
+}
+
+/** O cartão de ponto do dia de uma pessoa ({ nome, porTipo }). `pendente` diz quais horários aparecem apagados. */
+export const cartaoDoDia = (pessoa, { pendente = aguardandoEnvio } = {}) => el('div', { class: 'cartao-linha' },
+  pessoa.nome ? el('div', { class: 'cartao-nome', text: pessoa.nome }) : null,
+  el('div', { class: 'cartao-grade' }, TIPOS_PONTO.map((tipo) => celula(tipo, pessoa.porTipo[tipo.id], pendente))));
+
 export function criarTelaInicio({ registroPonto, sincronizador, catalogo, aparelho, aviso }) {
   const lista = $('#lista-hoje');
   const status = $('#status-envio');
   const avisoModo = $('#aviso-modo');
 
-  function celula(tipo, registro) {
-    const situacao = !registro ? 'vazio' : registro.status === 'enviado' ? '' : 'pendente';
-    return el('div', { class: 'cartao-celula' },
-      el('span', { class: 'cartao-rotulo', text: tipo.rotulo }),
-      el('span', {
-        class: `cartao-hora ${situacao}`.trim(),
-        title: situacao === 'pendente' ? 'Aguardando envio para a planilha' : null,
-        text: registro ? horaLocal(registro.timestamp) : '--:--',
-      }));
-  }
-
-  const cartao = (pessoa) => el('div', { class: 'cartao-linha' },
-    el('div', { class: 'cartao-nome', text: pessoa.nome }),
-    el('div', { class: 'cartao-grade' }, TIPOS_PONTO.map((tipo) => celula(tipo, pessoa.porTipo[tipo.id]))));
-
   async function atualizarHoje() {
     const pessoas = await registroPonto.resumoDeHoje();
-    lista.replaceChildren(...(pessoas.length ? pessoas.map(cartao) : [el('p', { class: 'vazio-texto', text: 'Nenhum ponto registrado hoje.' })]));
+    lista.replaceChildren(...(pessoas.length ? pessoas.map((p) => cartaoDoDia(p)) : [el('p', { class: 'vazio-texto', text: 'Nenhum ponto registrado hoje.' })]));
   }
 
   function mostrarStatus(estado) {

@@ -1,4 +1,5 @@
 // dom.js — utilidades pequenas de tela, usadas por todas as telas (DRY).
+import { DIAS_SEMANA } from '../config.js';
 
 export const $ = (seletor, raiz = document) => raiz.querySelector(seletor);
 export const $$ = (seletor, raiz = document) => [...raiz.querySelectorAll(seletor)];
@@ -60,3 +61,10 @@ export async function comBotaoOcupado(botao, tarefa, textoOcupado = null) {
 
 export const decimal = (valor) => Number(valor).toFixed(2).replace('.', ',');
 export const primeiroNome = (nome) => String(nome || '').trim().split(/\s+/)[0];
+
+/** Caixinhas Dom…Sáb dentro de `caixa`, marcando `selecionados` (números 0–6). */
+export const preencherDias = (caixa, selecionados) => caixa.replaceChildren(...DIAS_SEMANA.map((nome, i) => el('label', {},
+  el('input', { type: 'checkbox', value: String(i), checked: selecionados.includes(i) }), nome)));
+
+/** Os dias marcados nas caixinhas, como números 0–6. */
+export const diasMarcados = (caixa) => [...caixa.querySelectorAll('input:checked')].map((i) => Number(i.value));

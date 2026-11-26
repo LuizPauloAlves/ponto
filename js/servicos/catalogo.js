@@ -60,6 +60,13 @@ export function criarCatalogo({ preferencias, servidor, agora = () => Date.now()
   const ativos = () => funcionarios().filter((f) => f.ativo);
 
   return {
+    /** Apaga do aparelho o cadastro baixado, com os modelos faciais (ao desconectar ou trocar para a opção 2). */
+    async esquecer() {
+      dados = null;
+      aprendizagens = {};
+      invalidarCandidatos();
+      await Promise.all([preferencias.gravar('cadastro', null), preferencias.gravar('adaptacoes', {})]);
+    },
     carregar,
     atualizar,
     candidatos,

@@ -125,6 +125,35 @@ button, input, select { font: inherit; color: inherit; }
 .filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 @media (max-width: 480px) { .filtros { grid-template-columns: 1fr; } }
 .form-bloco { margin: 20px 0 8px; padding-bottom: 8px; }
+/* ---------- primeiro uso: as duas opções ---------- */
+.titulo-opcao { display: flex; align-items: center; gap: 10px; font-size: var(--t1); margin: 24px 0 4px; }
+.titulo-opcao span {
+  display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%;
+  background: var(--carimbo); color: var(--sobre-carimbo); font-size: var(--t0);
+}
+.opcao-pessoal { margin-top: 32px; padding-top: 8px; border-top: 1px solid var(--grade); }
+
+/* ---------- meu ponto ---------- */
+.seletor-mes { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 16px; }
+.seletor-mes-titulo { font-size: var(--t1); margin: 0; text-align: center; }
+.btn-icone:disabled { opacity: 0.3; }
+table.ponto tbody tr[data-dia] { cursor: pointer; }
+table.ponto tbody tr[data-dia]:active td { background: var(--carimbo-claro); }
+.lista-batidas { list-style: none; margin: 0 0 8px; padding: 0; }
+.lista-batidas li { padding: 10px 0; border-bottom: 1px solid var(--grade); }
+.batida { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.batida select { grid-column: 1 / -1; } /* o tipo em cima, inteiro; horário e botão embaixo */
+.batida select, .batida input {
+  min-height: 44px; padding: 6px 8px; border: 1.5px solid var(--grade); border-radius: 10px;
+  background: var(--superficie); color: var(--tinta); font: inherit; min-width: 0;
+}
+.batida-hora { display: grid; gap: 2px; justify-items: start; }
+.batida-hora small { font-size: 0.75rem; color: var(--tinta-suave); }
+.batida .btn { width: auto; min-height: 44px; }
+.batida-nova { margin-top: 18px; }
+.btn-texto { background: none; border: 0; padding: 10px 6px; min-height: 44px; font-weight: 700; color: var(--carimbo); cursor: pointer; }
+.btn-texto.perigo { color: var(--vermelho); }
+
 /* ---------- convite para instalar ---------- */
 .instalar { margin: 12px 0 4px; padding: 14px; border: 1.5px solid var(--carimbo); border-radius: 12px; background: var(--superficie); font-size: var(--t-1); }
 .instalar p { margin: 0 0 10px; }
@@ -291,11 +320,12 @@ table.ponto tbody tr[data-func] { cursor: pointer; }
   opacity: 0.15; transform: scale(0.7);
   animation: furar 1.6s ease-in-out calc(var(--i) * 110ms + 300ms) infinite;
 }
-.abertura-texto { margin: 0; color: var(--tinta-suave); font-size: var(--t-1); }
+.abertura-texto { margin: 0; color: var(--tinta-suave); font-size: var(--t-1); animation: aparecer 200ms ease 150ms both; } /* surge depois de o modo trocar o texto */
 @keyframes furar {
   0%, 55%, 100% { opacity: 0.15; transform: scale(0.7); }
   18% { opacity: 1; transform: scale(1); }
 }
+@keyframes aparecer { from { opacity: 0; } }
 @keyframes sumir { to { opacity: 0; visibility: hidden; pointer-events: none; } }
 
 .aviso {
@@ -305,7 +335,7 @@ table.ponto tbody tr[data-func] { cursor: pointer; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .carimbo, .abertura-marca, .abertura-furos i { animation: none; }
+  .carimbo, .abertura-marca, .abertura-furos i, .abertura-texto { animation: none; }
   .abertura-marca { transform: rotate(-4deg); }
   .abertura-furos i { opacity: 0.5; transform: none; }
   .abertura { transition: none; }

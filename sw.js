@@ -5,7 +5,7 @@ import * as banco from './js/infra/banco.js';
 import { criarServidor } from './js/infra/servidor.js';
 import { criarSincronizador, SEM_TEMPORIZADOR } from './js/servicos/sincronizador.js';
 
-const VERSAO = 'ponto-v5';             // mude a cada nova versão do app: os celulares baixam tudo de novo
+const VERSAO = 'ponto-v8';             // mude a cada nova versão do app: os celulares baixam tudo de novo
 const RECURSOS = 'ponto-recursos-v1';  // biblioteca e modelos da IA: versão fixa, não mudam
 const TEMPO_DO_ENVIO_MS = 45000;
 
@@ -16,13 +16,14 @@ const ARQUIVOS_DO_APP = [
   './fonts/doto-latin-800-normal.woff2', './fonts/atkinson-hyperlegible-latin-400-normal.woff2', './fonts/atkinson-hyperlegible-latin-700-normal.woff2',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png',
   './js/main.js', './js/config.js',
-  './js/dominio/ajustes.js', './js/dominio/biometria.js', './js/dominio/captura.js', './js/dominio/codificacao.js',
+  './js/dominio/ajustes.js', './js/dominio/biometria.js', './js/dominio/captura.js', './js/dominio/codificacao.js', './js/dominio/exportacao.js',
   './js/dominio/jornada.js', './js/dominio/localizacao.js', './js/dominio/seguranca.js', './js/dominio/tempo.js',
   './js/infra/banco.js', './js/infra/camera.js', './js/infra/gps.js', './js/infra/ia.js', './js/infra/servidor.js',
-  './js/servicos/aparelho.js', './js/servicos/catalogo.js', './js/servicos/diario.js', './js/servicos/leitorFacial.js',
+  './js/servicos/aparelho.js', './js/servicos/catalogo.js', './js/servicos/diario.js', './js/servicos/leitorFacial.js', './js/servicos/meuPonto.js', './js/servicos/modoDeUso.js',
   './js/servicos/reconhecimento.js', './js/servicos/registroPonto.js', './js/servicos/sincronizador.js',
-  './js/ui/abertura.js', './js/ui/conexao.js', './js/ui/confirmacao.js', './js/ui/dialogoPin.js', './js/ui/dom.js', './js/ui/fluxoPonto.js',
-  './js/ui/inicio.js', './js/ui/instalacao.js', './js/ui/relogio.js', './js/ui/sucesso.js', './js/ui/telaCamera.js', './js/ui/textos.js',
+  './js/ui/abertura.js', './js/ui/arquivo.js', './js/ui/conexao.js', './js/ui/confirmacao.js', './js/ui/dialogoPin.js', './js/ui/dom.js', './js/ui/fluxoPonto.js',
+  './js/ui/inicio.js', './js/ui/instalacao.js', './js/ui/mesNaTela.js', './js/ui/relogio.js', './js/ui/sucesso.js', './js/ui/telaCamera.js', './js/ui/textos.js',
+  './js/ui/meuPonto/ajustesPessoais.js', './js/ui/meuPonto/editorDia.js', './js/ui/meuPonto/inicioPessoal.js', './js/ui/meuPonto/meuMes.js',
   './js/ui/admin/admin.js', './js/ui/admin/ajustes.js', './js/ui/admin/locais.js', './js/ui/admin/manutencao.js',
   './js/ui/admin/pessoas.js', './js/ui/admin/relatorio.js',
 ];

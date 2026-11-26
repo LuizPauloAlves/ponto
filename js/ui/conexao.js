@@ -1,4 +1,5 @@
-// conexao.js — liga o aparelho ao servidor (endereço do Apps Script + token).
+// conexao.js — primeiro uso: liga o aparelho ao servidor (endereço do Apps Script + token)
+// ou escolhe o modo "só neste celular", que não precisa de servidor.
 import { $, comBotaoOcupado, mostrarTela } from './dom.js';
 
 const ENDERECO_VALIDO = /^https:\/\/script\.google\.com\/.+\/exec$/;
@@ -15,7 +16,12 @@ export async function aceitarLinkDeConfiguracao(preferencias) {
   history.replaceState(null, '', location.pathname);
 }
 
-export function criarTelaConexao({ servidor, preferencias, aoConectar = () => location.reload() }) {
+export function criarTelaConexao({ servidor, preferencias, modoDeUso, aoConectar = () => location.reload() }) {
+  async function usarSoNesteCelular() {
+    await modoDeUso.usarSoNesteCelular();
+    aoConectar();
+  }
+
   const campoUrl = $('#cfg-url');
   const campoToken = $('#cfg-token');
   const erro = $('#cfg-erro');
@@ -36,6 +42,7 @@ export function criarTelaConexao({ servidor, preferencias, aoConectar = () => lo
   }
 
   botao.addEventListener('click', () => comBotaoOcupado(botao, conectar, 'Conectando…'));
+  $('#cfg-pessoal').addEventListener('click', usarSoNesteCelular);
 
   /** Mostra a tela; com `url`, já preenche o endereço (ex.: o token mudou no servidor). */
   function mostrar({ url = '', mensagem = '' } = {}) {
